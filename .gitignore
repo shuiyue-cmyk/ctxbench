@@ -1,0 +1,5 @@
+__pycache__/
+.claude/
+results/*.log
+results/report_stdout.txt
+attention_test.py
