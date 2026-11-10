@@ -2,4 +2,5 @@ __pycache__/
 .claude/
 results/*.log
 results/report_stdout.txt
+results/skip.txt
 attention_test.py

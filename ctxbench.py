@@ -300,46 +300,49 @@ TRANSIENT = re.compile(r"HTTP 5\d\d|HTTP 429|timed out|Connection|Remote end clo
 CTX_ERR = re.compile(r"context|too long|maximum|exceed|token", re.I)
 
 
-def run_model(m, rungs, trials, url, auth, ratio, done, timeout):
+def run_cell(m, rung, trial, url, auth, ratio, timeout):
     model, variant = m["model"], m["variant"]
-    cap = m.get("max_context")
-    for rung in rungs:
-        if cap and rung > cap:
-            continue
-        for trial in range(trials):
-            if (model, rung, trial) in done:
-                continue
-            prompt, key = build(rung, ratio, seed=rung * 10 + trial)
-            t0 = time.time()
-            for attempt in range(3):
-                text, err = generate(url, auth, model, variant, prompt, timeout)
-                retry = (err and TRANSIENT.search(err) and not CTX_ERR.search(err)) or (err is None and not (text or "").strip())
-                if not retry or attempt == 2:
-                    break
-                time.sleep(30)
-            rec = {"model": model, "variant": variant, "rung": rung, "trial": trial, "chars": len(prompt),
-                   "secs": round(time.time() - t0, 1), "date": _date.today().isoformat(),
-                   "error": err, "answer": text, "key": key, "score": score(text, key) if err is None else None}
-            with LOCK:
-                with RAW.open("a", encoding="utf-8") as f:
-                    f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-                s = rec["score"]
-                print(f"{model:40s} {rung:>9,} #{trial} {rec['secs']:>7.1f}s  " +
-                      (f"ERROR {err[:200]}" if err else
-                       f"综合 {s['composite']:.2f}  检索 {s['retrieve']:.1f} 更新 {s['update']:.2f} "
-                       f"计数 {s['count']:.0f}({s['count_given']}/{key['count']}) 规则 {s['sign']:.0f}"), flush=True)
+    prompt, key = build(rung, ratio, seed=rung * 10 + trial)
+    t0 = time.time()
+    for attempt in range(3):
+        text, err = generate(url, auth, model, variant, prompt, timeout)
+        retry = (err and TRANSIENT.search(err) and not CTX_ERR.search(err)) or (err is None and not (text or "").strip())
+        if not retry or attempt == 2:
+            break
+        time.sleep(30)
+    chars = len(prompt)
+    del prompt  # 900K 档的归档有几 MB，并发时尽早释放
+    rec = {"model": model, "variant": variant, "rung": rung, "trial": trial, "chars": chars,
+           "secs": round(time.time() - t0, 1), "date": _date.today().isoformat(),
+           "error": err, "answer": text, "key": key, "score": score(text, key) if err is None else None}
+    with LOCK:
+        with RAW.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        s = rec["score"]
+        print(f"{model:40s} {rung:>9,} #{trial} {rec['secs']:>7.1f}s  " +
+              (f"ERROR {err[:200]}" if err else
+               f"综合 {s['composite']:.2f}  检索 {s['retrieve']:.1f} 更新 {s['update']:.2f} "
+               f"计数 {s['count']:.0f}({s['count_given']}/{key['count']}) 规则 {s['sign']:.0f}"), flush=True)
 
 
-def run(models, rungs, trials, timeout):
+def run(models, rungs, trials, timeout, concurrency, skip=()):
     calib = load_calib()
     missing = [m["model"] for m in models if m["model"] not in calib]
     if missing:
         sys.exit(f"缺少校准数据，先运行: python ctxbench.py calibrate --models {' '.join(missing)}")
     url, auth = server()
     RESULTS.mkdir(exist_ok=True)
-    done = {(j["model"], j["rung"], j["trial"]) for j in load_records() if j.get("error") is None}
-    with ThreadPoolExecutor(len(models)) as ex:  # 不同模型并行，同一模型内串行
-        for f in [ex.submit(run_model, m, rungs, trials, url, auth, calib[m["model"]], done, timeout) for m in models]:
+    done = {(j["model"], j["rung"], j["trial"]) for j in load_records() if j.get("error") is None} | set(skip)
+    # 所有 (模型, 档位, 次数) 放进同一个池子；按档位从大到小、模型交错排队，长请求先发出去
+    cells = [(m, rung, trial) for rung in rungs for trial in range(trials) for m in models
+             if (m["model"], rung, trial) not in done and not (m.get("max_context") and rung > m["max_context"])]
+    if not cells:
+        print("没有待跑的格子。")
+        return
+    workers = len(cells) if concurrency <= 0 else min(concurrency, len(cells))
+    print(f"待跑 {len(cells)} 格，并发 {workers}", flush=True)
+    with ThreadPoolExecutor(workers) as ex:
+        for f in [ex.submit(run_cell, m, rung, trial, url, auth, calib[m["model"]], timeout) for m, rung, trial in cells]:
             f.result()
 
 # ---------------------------------------------------------------- 汇总
@@ -545,6 +548,9 @@ if __name__ == "__main__":
     p.add_argument("--models", nargs="+", help="只跑这些模型（provider/model），默认 config.json 里的全部")
     p.add_argument("--rungs", nargs="+", type=int, help="覆盖 config.json 的阶梯")
     p.add_argument("--trials", type=int, help="覆盖 config.json 的每档次数")
+    p.add_argument("--concurrency", type=int, help="覆盖 config.json 的并发数（0 = 所有格子同时发出）")
+    p.add_argument("--skip", nargs="+", default=[], metavar="MODEL@RUNG#TRIAL",
+                   help="本次跳过的格子，例如 opencode-go/glm-5.3-flash@400000#1（别的进程正在跑它时用）")
     a = p.parse_args()
     cfg = load_config()
     models = cfg["models"]
@@ -554,6 +560,13 @@ if __name__ == "__main__":
     if a.cmd == "calibrate":
         calibrate(models)
     elif a.cmd == "run":
-        run(models, sorted(a.rungs or cfg["rungs"], reverse=True), a.trials or cfg["trials"], cfg.get("request_timeout_s", 3600))
+        skip = []
+        for s in a.skip:
+            mm, rest = s.rsplit("@", 1)
+            rung, trial = rest.split("#")
+            skip.append((norm(mm), int(rung), int(trial)))
+        conc = a.concurrency if a.concurrency is not None else cfg.get("concurrency", 8)
+        run(models, sorted(a.rungs or cfg["rungs"], reverse=True), a.trials or cfg["trials"],
+            cfg.get("request_timeout_s", 3600), conc, skip)
     else:
         report()

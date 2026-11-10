@@ -1,6 +1,7 @@
 {
   "rungs": [900000, 800000, 650000, 500000, 400000, 300000, 200000, 128000, 64000, 32000],
   "trials": 2,
+  "concurrency": 0,
   "request_timeout_s": 3600,
   "models": [
     { "model": "opencode-go/deepseek-v4.1-flash",        "variant": "max",   "name": "DeepSeek V4.1 Flash" },

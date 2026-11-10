@@ -47,6 +47,7 @@ cd ctxbench
    {
      "rungs": [900000, 800000, 650000, 500000, 400000, 300000, 200000, 128000, 64000, 32000],
      "trials": 2,
+     "concurrency": 0,
      "models": [
        { "model": "opencode-go/glm-5.3-flash", "variant": "max", "name": "GLM-5.3-Flash" },
        { "model": "openrouter/some-vendor/some-model", "variant": "high", "name": "Some Model", "max_context": 256000 }
@@ -86,7 +87,7 @@ python ctxbench.py run --models opencode-go/glm-5.3-flash --rungs 64000 32000 --
 - 服务的密码从 `~/.config/opencode/service.json` 读取；也可以用环境变量 `OPENCODE_SERVER_URL`、`OPENCODE_SERVER_PASSWORD` 指定别的服务。
 - 找 opencode 可执行文件的顺序：`OPENCODE_CLI` 环境变量 → `PATH` 里的 `opencode` / `opencode-cli` → Windows 桌面版自带的 CLI。
 - 校准用的是 `opencode run --format json` 返回的输入 token 数（短消息与长样本之差 ÷ 字符数）。
-- 不同模型并行跑，同一个模型内部按档位从大到小串行；5xx、429、超时、空回答会等 30 秒自动重试，最多 3 次。
+- 所有（模型 × 档位 × 次数）的格子放进同一个线程池并发发出，长档位先发。并发数由 `config.json` 的 `concurrency` 控制，`0` 表示全部同时发出；供应商有并发或速率限制时调小即可。5xx、429、超时、空回答会等 30 秒自动重试，最多 3 次。
 
 ## 注意事项
 
