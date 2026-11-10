@@ -473,14 +473,16 @@ def leaderboard_md(summary, cfg):
     ranked = sorted(summary, key=lambda s: (s["usable"] or 0, s["perfect"] or 0,
                                             sum(r.get("composite", 0) for r in s["rows"])), reverse=True)
     rungs = sorted({r["rung"] for s in summary for r in s["rows"]}, reverse=True)
-    md = ["| # | 模型 | 思考档 | 推荐上下文<br>（全部满分） | 可用上限<br>（均分≥0.90 且单次≥0.80） | 测试日期 |",
-          "|---:|---|---|---:|---:|---|"]
+    md = ["| # | 模型 | 思考档 | 推荐上下文<br>（全部满分） | 可用上限<br>（均分≥0.90 且单次≥0.80） | 每档次数 | 测试日期 |",
+          "|---:|---|---|---:|---:|---:|---|"]
     fmt = lambda v: k(v) if v else "< 最小档"
+    typical = {s["model"]: max((r["n"] for r in s["rows"]), default=0) for s in summary}
     for n, s in enumerate(ranked, 1):
         md.append(f"| {n} | {s['name']}<br><sub>`{s['model']}`</sub> | {s['variant'] or '默认'} | "
-                  f"**{fmt(s['perfect'])}** | **{fmt(s['usable'])}** | {s['date'] or '-'} |")
+                  f"**{fmt(s['perfect'])}** | **{fmt(s['usable'])}** | {typical[s['model']]} | {s['date'] or '-'} |")
     md += ["", "各档综合分（每格为各次试验的平均；— 表示未测或请求失败）：", "",
            "| 模型 | " + " | ".join(k(r) for r in rungs) + " |", "|---|" + "---:|" * len(rungs)]
+    md[-4] = "各档综合分（每格为各次试验的平均；— 表示未测或请求失败；<sup>×n</sup> 表示该格次数少于该模型的常规次数）："
     for s in ranked:
         by = {r["rung"]: r for r in s["rows"]}
         cells = []
@@ -489,7 +491,7 @@ def leaderboard_md(summary, cfg):
             if not row or "composite" not in row:
                 cells.append("—")
             else:
-                cells.append(f"{row['composite']:.2f}" + ("" if row["n"] >= cfg["trials"] else f"<sup>×{row['n']}</sup>"))
+                cells.append(f"{row['composite']:.2f}" + ("" if row["n"] >= typical[s["model"]] else f"<sup>×{row['n']}</sup>"))
         md.append(f"| {s['name']} | " + " | ".join(cells) + " |")
     return "\n".join(md)
 

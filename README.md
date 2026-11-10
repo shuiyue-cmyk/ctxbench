@@ -14,20 +14,20 @@ OpenCode Go / Zen 订阅、Anthropic、OpenAI、OpenRouter、自建的 OpenAI �
 <!-- LEADERBOARD:START -->
 ![综合分 vs 上下文长度](results/chart.svg)
 
-| # | 模型 | 思考档 | 推荐上下文<br>（全部满分） | 可用上限<br>（均分≥0.90 且单次≥0.80） | 测试日期 |
-|---:|---|---|---:|---:|---|
-| 1 | Muse Spark 1.3<br><sub>`opencode-go/muse-spark-1.3-contributor`</sub> | xhigh | **650K** | **900K** | 2026-11-11 |
-| 2 | DeepSeek V4.1 Flash<br><sub>`opencode-go/deepseek-v4.1-flash`</sub> | max | **128K** | **300K** | 2026-11-11 |
-| 3 | MiniMax M3.1 Flash<br><sub>`opencode-go/minimax-m3.1-flash`</sub> | max | **128K** | **128K** | 2026-11-11 |
-| 4 | GLM-5.3-Flash<br><sub>`opencode-go/glm-5.3-flash`</sub> | max | **< 最小档** | **< 最小档** | 2026-11-11 |
+| # | 模型 | 思考档 | 推荐上下文<br>（全部满分） | 可用上限<br>（均分≥0.90 且单次≥0.80） | 每档次数 | 测试日期 |
+|---:|---|---|---:|---:|---:|---|
+| 1 | Muse Spark 1.3<br><sub>`opencode-go/muse-spark-1.3-contributor`</sub> | xhigh | **400K** | **650K** | 3 | 2026-11-11 |
+| 2 | DeepSeek V4.1 Flash<br><sub>`opencode-go/deepseek-v4.1-flash`</sub> | max | **64K** | **200K** | 3 | 2026-11-11 |
+| 3 | MiniMax M3.1 Flash<br><sub>`opencode-go/minimax-m3.1-flash`</sub> | max | **128K** | **128K** | 3 | 2026-11-11 |
+| 4 | GLM-5.3-Flash<br><sub>`opencode-go/glm-5.3-flash`</sub> | max | **< 最小档** | **< 最小档** | 2 | 2026-11-11 |
 
-各档综合分（每格为各次试验的平均；— 表示未测或请求失败）：
+各档综合分（每格为各次试验的平均；— 表示未测或请求失败；<sup>×n</sup> 表示该格次数少于该模型的常规次数）：
 
 | 模型 | 900K | 800K | 650K | 500K | 400K | 300K | 200K | 128K | 64K | 32K |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Muse Spark 1.3 | 1.00 | 0.93 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
-| DeepSeek V4.1 Flash | 0.90 | 0.90 | 0.90 | 0.80 | 0.80 | 0.90 | 0.90 | 1.00 | 1.00 | 1.00 |
-| MiniMax M3.1 Flash | 0.52 | 0.49 | 0.74 | 0.81 | 0.86 | 1.00 | 0.80 | 1.00 | 1.00 | 1.00 |
+| Muse Spark 1.3 | 1.00 | 0.87 | 1.00 | 0.95 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+| DeepSeek V4.1 Flash | 0.93 | 0.93 | 0.93 | 0.87 | 0.87 | 0.87 | 0.93 | 0.93 | 1.00 | 1.00 |
+| MiniMax M3.1 Flash | 0.47 | 0.47 | 0.66 | 0.73 | 0.83 | 0.93 | 0.87 | 1.00 | 1.00 | 1.00 |
 | GLM-5.3-Flash | 0.72 | 0.84 | 0.47 | 1.00 | 1.00 | 0.90 | 1.00 | 1.00 | 0.90 | 0.88 |
 
 逐档明细（检索漏掉的深度、空回答、耗时等）见 [results/report.md](results/report.md)。
@@ -64,7 +64,7 @@ cd ctxbench
    ```json
    {
      "rungs": [900000, 800000, 650000, 500000, 400000, 300000, 200000, 128000, 64000, 32000],
-     "trials": 2,
+     "trials": 3,
      "concurrency": 0,
      "models": [
        { "model": "opencode-go/glm-5.3-flash", "variant": "max", "name": "GLM-5.3-Flash" },
@@ -109,7 +109,8 @@ python ctxbench.py run --models opencode-go/glm-5.3-flash --rungs 64000 32000 --
 
 ## 注意事项
 
-- 每档默认只跑 2 次，单次结果有运气成分。看“可用上限”要结合逐档明细里的“最差一次”。
+- 每档默认跑 3 次，单次结果仍有运气成分，看“可用上限”要结合逐档明细里的“最差一次”。从首轮结果看，失分大多来自计数题，检索和更新题错得少得多。
+- 当前榜单中 GLM-5.3-Flash 每档只跑了 2 次，其余模型 3 次。GLM 的失分集中在短上下文的计数题，排名受偶然误差影响较大。
 - 档位长度是按校准比例换算的，实际 token 数可能有百分之几的偏差。
 - 结果反映的是“经由该供应商、在测试当天”的表现。同一个模型换供应商、换思考档，结果都可能不同。
 - 题目是中文的工作记录；英文或代码为主的上下文，表现可能不一样。
