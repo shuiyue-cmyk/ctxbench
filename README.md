@@ -12,7 +12,25 @@ OpenCode Go / Zen 订阅、Anthropic、OpenAI、OpenRouter、自建的 OpenAI �
 ## 榜单
 
 <!-- LEADERBOARD:START -->
-> 首轮测试还在跑，结果出来后会由 `python ctxbench.py report` 自动填到这里。
+![综合分 vs 上下文长度](results/chart.svg)
+
+| # | 模型 | 思考档 | 推荐上下文<br>（全部满分） | 可用上限<br>（均分≥0.90 且单次≥0.80） | 测试日期 |
+|---:|---|---|---:|---:|---|
+| 1 | Muse Spark 1.3<br><sub>`opencode-go/muse-spark-1.3-contributor`</sub> | xhigh | **650K** | **900K** | 2026-11-11 |
+| 2 | DeepSeek V4.1 Flash<br><sub>`opencode-go/deepseek-v4.1-flash`</sub> | max | **128K** | **300K** | 2026-11-11 |
+| 3 | MiniMax M3.1 Flash<br><sub>`opencode-go/minimax-m3.1-flash`</sub> | max | **128K** | **128K** | 2026-11-11 |
+| 4 | GLM-5.3-Flash<br><sub>`opencode-go/glm-5.3-flash`</sub> | max | **< 最小档** | **< 最小档** | 2026-11-11 |
+
+各档综合分（每格为各次试验的平均；— 表示未测或请求失败）：
+
+| 模型 | 900K | 800K | 650K | 500K | 400K | 300K | 200K | 128K | 64K | 32K |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Muse Spark 1.3 | 1.00 | 0.93 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+| DeepSeek V4.1 Flash | 0.90 | 0.90 | 0.90 | 0.80 | 0.80 | 0.90 | 0.90 | 1.00 | 1.00 | 1.00 |
+| MiniMax M3.1 Flash | 0.52 | 0.49 | 0.74 | 0.81 | 0.86 | 1.00 | 0.80 | 1.00 | 1.00 | 1.00 |
+| GLM-5.3-Flash | 0.72 | 0.84 | 0.47 | 1.00 | 1.00 | 0.90 | 1.00 | 1.00 | 0.90 | 0.88 |
+
+逐档明细（检索漏掉的深度、空回答、耗时等）见 [results/report.md](results/report.md)。
 <!-- LEADERBOARD:END -->
 
 ## 测的是什么

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 440" width="820" height="440" font-family="system-ui,-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif">
+<style>.bg{fill:#fcfcfb}.grid{stroke:#e1e0d9;stroke-width:1}.axis{stroke:#c3c2b7;stroke-width:1}.t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.thr{stroke:#898781;stroke-width:1;stroke-dasharray:4 4}.ring{stroke:#fcfcfb}.s0{stroke:#2a78d6}.f0{fill:#2a78d6}.s1{stroke:#eb6834}.f1{fill:#eb6834}.s2{stroke:#1baf7a}.f2{fill:#1baf7a}.s3{stroke:#eda100}.f3{fill:#eda100}.s4{stroke:#e87ba4}.f4{fill:#e87ba4}.s5{stroke:#008300}.f5{fill:#008300}.s6{stroke:#6250d6}.f6{fill:#6250d6}.s7{stroke:#e34948}.f7{fill:#e34948}@media (prefers-color-scheme:dark){.bg{fill:#1a1a19}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.ring{stroke:#1a1a19}.s0{stroke:#3987e5}.f0{fill:#3987e5}.s1{stroke:#d95926}.f1{fill:#d95926}.s2{stroke:#199e70}.f2{fill:#199e70}.s3{stroke:#c98500}.f3{fill:#c98500}.s4{stroke:#d55181}.f4{fill:#d55181}.s5{stroke:#008300}.f5{fill:#008300}.s6{stroke:#9085e9}.f6{fill:#9085e9}.s7{stroke:#e66767}.f7{fill:#e66767}}</style>
+<rect class="bg" width="820" height="440" rx="8"/>
+<text class="t1" x="56" y="28" font-size="16" font-weight="600">综合分 vs 上下文长度</text>
+<text class="t2" x="56" y="47" font-size="12">越靠右越长；线越平越稳。虚线 = 可用门槛 0.90</text>
+<line class="s0" x1="56" y1="62" x2="72" y2="62" stroke-width="2"/><circle class="f0 ring" cx="64" cy="62" r="4" stroke-width="2"/><text class="t2" x="78" y="66" font-size="12">DeepSeek V4.1 Flash</text>
+<line class="s1" x1="219" y1="62" x2="235" y2="62" stroke-width="2"/><circle class="f1 ring" cx="227" cy="62" r="4" stroke-width="2"/><text class="t2" x="241" y="66" font-size="12">Muse Spark 1.3</text>
+<line class="s2" x1="347" y1="62" x2="363" y2="62" stroke-width="2"/><circle class="f2 ring" cx="355" cy="62" r="4" stroke-width="2"/><text class="t2" x="369" y="66" font-size="12">MiniMax M3.1 Flash</text>
+<line class="s3" x1="503" y1="62" x2="519" y2="62" stroke-width="2"/><circle class="f3 ring" cx="511" cy="62" r="4" stroke-width="2"/><text class="t2" x="525" y="66" font-size="12">GLM-5.3-Flash</text>
+<line class="axis" x1="56" y1="386.0" x2="650" y2="386.0"/><text class="t3" x="48" y="390.0" font-size="11" text-anchor="end">0.0</text>
+<line class="grid" x1="56" y1="324.0" x2="650" y2="324.0"/><text class="t3" x="48" y="328.0" font-size="11" text-anchor="end">0.2</text>
+<line class="grid" x1="56" y1="262.0" x2="650" y2="262.0"/><text class="t3" x="48" y="266.0" font-size="11" text-anchor="end">0.4</text>
+<line class="grid" x1="56" y1="200.0" x2="650" y2="200.0"/><text class="t3" x="48" y="204.0" font-size="11" text-anchor="end">0.6</text>
+<line class="grid" x1="56" y1="138.0" x2="650" y2="138.0"/><text class="t3" x="48" y="142.0" font-size="11" text-anchor="end">0.8</text>
+<line class="grid" x1="56" y1="76.0" x2="650" y2="76.0"/><text class="t3" x="48" y="80.0" font-size="11" text-anchor="end">1.0</text>
+<line class="thr" x1="56" y1="107.0" x2="650" y2="107.0"/>
+<line class="axis" x1="56.0" y1="386" x2="56.0" y2="390"/>
+<text class="t3" x="56.0" y="404" font-size="11" text-anchor="middle">32K</text>
+<line class="axis" x1="179.4" y1="386" x2="179.4" y2="390"/>
+<text class="t3" x="179.4" y="404" font-size="11" text-anchor="middle">64K</text>
+<line class="axis" x1="302.8" y1="386" x2="302.8" y2="390"/>
+<text class="t3" x="302.8" y="404" font-size="11" text-anchor="middle">128K</text>
+<line class="axis" x1="382.2" y1="386" x2="382.2" y2="390"/>
+<text class="t3" x="382.2" y="404" font-size="11" text-anchor="middle">200K</text>
+<line class="axis" x1="454.4" y1="386" x2="454.4" y2="390"/>
+<text class="t3" x="454.4" y="404" font-size="11" text-anchor="middle">300K</text>
+<line class="axis" x1="505.6" y1="386" x2="505.6" y2="390"/>
+<text class="t3" x="505.6" y="404" font-size="11" text-anchor="middle">400K</text>
+<line class="axis" x1="545.4" y1="386" x2="545.4" y2="390"/>
+<text class="t3" x="545.4" y="404" font-size="11" text-anchor="middle">500K</text>
+<line class="axis" x1="592.1" y1="386" x2="592.1" y2="390"/>
+<text class="t3" x="592.1" y="404" font-size="11" text-anchor="middle">650K</text>
+<line class="axis" x1="629.0" y1="386" x2="629.0" y2="390"/>
+<line class="axis" x1="650.0" y1="386" x2="650.0" y2="390"/>
+<text class="t3" x="650.0" y="404" font-size="11" text-anchor="middle">900K</text>
+<text class="t3" x="353.0" y="428" font-size="11" text-anchor="middle">上下文长度（token，对数刻度）</text>
+<polyline class="s0" fill="none" stroke-width="2" stroke-linejoin="round" points="56.0,76.0 179.4,76.0 302.8,76.0 382.2,107.0 454.4,107.0 505.6,138.0 545.4,138.0 592.1,107.0 629.0,107.0 650.0,107.0"/>
+<circle class="f0 ring" cx="56.0" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f0 ring" cx="179.4" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f0 ring" cx="302.8" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f0 ring" cx="382.2" cy="107.0" r="4" stroke-width="2"/>
+<circle class="f0 ring" cx="454.4" cy="107.0" r="4" stroke-width="2"/>
+<circle class="f0 ring" cx="505.6" cy="138.0" r="4" stroke-width="2"/>
+<circle class="f0 ring" cx="545.4" cy="138.0" r="4" stroke-width="2"/>
+<circle class="f0 ring" cx="592.1" cy="107.0" r="4" stroke-width="2"/>
+<circle class="f0 ring" cx="629.0" cy="107.0" r="4" stroke-width="2"/>
+<circle class="f0 ring" cx="650.0" cy="107.0" r="4" stroke-width="2"/>
+<polyline class="s1" fill="none" stroke-width="2" stroke-linejoin="round" points="56.0,76.0 179.4,76.0 302.8,76.0 382.2,76.0 454.4,76.0 505.6,76.0 545.4,76.0 592.1,76.0 629.0,98.1 650.0,76.0"/>
+<circle class="f1 ring" cx="56.0" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f1 ring" cx="179.4" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f1 ring" cx="302.8" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f1 ring" cx="382.2" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f1 ring" cx="454.4" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f1 ring" cx="505.6" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f1 ring" cx="545.4" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f1 ring" cx="592.1" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f1 ring" cx="629.0" cy="98.1" r="4" stroke-width="2"/>
+<circle class="f1 ring" cx="650.0" cy="76.0" r="4" stroke-width="2"/>
+<polyline class="s2" fill="none" stroke-width="2" stroke-linejoin="round" points="56.0,76.0 179.4,76.0 302.8,76.0 382.2,138.0 454.4,76.0 505.6,119.4 545.4,135.3 592.1,157.4 629.0,234.5 650.0,226.3"/>
+<circle class="f2 ring" cx="56.0" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f2 ring" cx="179.4" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f2 ring" cx="302.8" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f2 ring" cx="382.2" cy="138.0" r="4" stroke-width="2"/>
+<circle class="f2 ring" cx="454.4" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f2 ring" cx="505.6" cy="119.4" r="4" stroke-width="2"/>
+<circle class="f2 ring" cx="545.4" cy="135.3" r="4" stroke-width="2"/>
+<circle class="f2 ring" cx="592.1" cy="157.4" r="4" stroke-width="2"/>
+<circle class="f2 ring" cx="629.0" cy="234.5" r="4" stroke-width="2"/>
+<circle class="f2 ring" cx="650.0" cy="226.3" r="4" stroke-width="2"/>
+<polyline class="s3" fill="none" stroke-width="2" stroke-linejoin="round" points="56.0,113.2 179.4,107.0 302.8,76.0 382.2,76.0 454.4,107.0 505.6,76.0 545.4,76.0 592.1,240.7 629.0,126.4 650.0,163.6"/>
+<circle class="f3 ring" cx="56.0" cy="113.2" r="4" stroke-width="2"/>
+<circle class="f3 ring" cx="179.4" cy="107.0" r="4" stroke-width="2"/>
+<circle class="f3 ring" cx="302.8" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f3 ring" cx="382.2" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f3 ring" cx="454.4" cy="107.0" r="4" stroke-width="2"/>
+<circle class="f3 ring" cx="505.6" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f3 ring" cx="545.4" cy="76.0" r="4" stroke-width="2"/>
+<circle class="f3 ring" cx="592.1" cy="240.7" r="4" stroke-width="2"/>
+<circle class="f3 ring" cx="629.0" cy="126.4" r="4" stroke-width="2"/>
+<circle class="f3 ring" cx="650.0" cy="163.6" r="4" stroke-width="2"/>
+<text class="t2" x="660" y="80.0" font-size="12">Muse Spark 1.3 1.00</text>
+<text class="t2" x="660" y="111.0" font-size="12">DeepSeek V4.1 Flash 0.90</text>
+<text class="t2" x="660" y="167.6" font-size="12">GLM-5.3-Flash 0.72</text>
+<text class="t2" x="660" y="230.3" font-size="12">MiniMax M3.1 Flash 0.52</text>
+</svg>
