@@ -103,7 +103,7 @@ cd ctxbench
 python ctxbench.py run --models opencode-go/glm-5.3-flash --rungs 64000 32000 --trials 1
 ```
 
-`report` 会生成 `results/report.md`（逐档明细）、`results/chart.svg`（折线图），并刷新本 README 的榜单区块。
+`report` 会生成 `results/report.md`（逐档明细）、`results/chart.svg`（每个模型一格的分面折线图，带各次试验的最低–最高色带），并刷新本 README 的榜单区块。
 
 ## 它怎么调用 opencode
 

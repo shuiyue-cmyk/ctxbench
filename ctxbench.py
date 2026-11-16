@@ -366,6 +366,7 @@ def summarize(cfg):
             if ok:
                 row.update({f: sum(j["score"][f] for j in ok) / len(ok) for f in ("composite", *WEIGHTS)})
                 row["worst"] = min(j["score"]["composite"] for j in ok)
+                row["best"] = max(j["score"]["composite"] for j in ok)
                 row["secs"] = sum(j["secs"] for j in ok) / len(ok)
                 row["miss"] = sorted(d for j in ok for d in j["score"]["retrieve_miss_depths"])
                 row["stale"] = sum(j["score"]["update_stale"] for j in ok)
@@ -396,81 +397,116 @@ def summarize(cfg):
 def k(n):
     return f"{n / 1_000_000:g}M" if n >= 1_000_000 else f"{n / 1000:g}K"
 
-# ---------------------------------------------------------------- 折线图（纯 SVG，无依赖）
-
-LIGHT = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
-DARK = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"]
-
+# ---------------------------------------------------------------- 分面折线图（纯 SVG，无依赖）
 
 def esc(s):
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def rank(summary):
+    """榜单顺序：可用上限 > 推荐上下文 > 全档平均。"""
+    def mean(s):
+        v = [r["composite"] for r in s["rows"] if "composite" in r]
+        return sum(v) / len(v) if v else 0
+    return sorted(summary, key=lambda s: (s["usable"] or 0, s["perfect"] or 0, mean(s)), reverse=True)
+
+
 def chart_svg(summary):
-    series = [s for s in summary if any("composite" in r for r in s["rows"])][:8]  # 最多 8 种分类色，不循环取色
+    """每个模型一格小图（按榜单顺序）：
+    蓝线 = 各档平均分，蓝色带 = 各次试验的最低–最高，灰线 = 其他模型（对照），浅蓝底 = 可用范围，虚线 = 门槛。"""
+    series = [s for s in rank(summary) if any("composite" in r for r in s["rows"])]
+    if not series:
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"/>'
     rungs = sorted({r["rung"] for s in series for r in s["rows"] if "composite" in r})
-    W, H = 820, 440
-    L, R, T, B = 56, 170, 76, 54
-    pw, ph = W - L - R, H - T - B
-    lo, hi = (math.log(rungs[0]), math.log(rungs[-1])) if rungs else (0, 1)
-    X = lambda v: L + (pw * (math.log(v) - lo) / (hi - lo) if hi > lo else pw / 2)
-    Y = lambda v: T + ph * (1 - v)
-    css = [".bg{fill:#fcfcfb}.grid{stroke:#e1e0d9;stroke-width:1}.axis{stroke:#c3c2b7;stroke-width:1}"
-           ".t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}.thr{stroke:#898781;stroke-width:1;stroke-dasharray:4 4}"
-           ".ring{stroke:#fcfcfb}"]
-    css += [f".s{i}{{stroke:{c}}}.f{i}{{fill:{c}}}" for i, c in enumerate(LIGHT)]
-    dark = [".bg{fill:#1a1a19}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.ring{stroke:#1a1a19}"]
-    dark += [f".s{i}{{stroke:{c}}}.f{i}{{fill:{c}}}" for i, c in enumerate(DARK)]
-    o = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
+    n = len(series)
+    cols = 3 if n > 4 else 2 if n > 1 else 1
+    nrows = math.ceil(n / cols)
+    W, M, GX, GY, HEAD = 900, 20, 24, 16, 84
+    pw = (W - 2 * M - GX * (cols - 1)) / cols
+    TITLE, PH, XL, PL, PR = 30, 124, 20, 30, 10
+    inner = pw - PL - PR
+    H = HEAD + nrows * (TITLE + PH + XL) + (nrows - 1) * GY + M - 6
+    lo, hi = math.log(rungs[0]), math.log(max(rungs[-1], rungs[0] + 1))
+    # 纵轴下限按数据取（最低的各档平均分再往下留 0.1），不从 0 起，免得一半面积空着；色带低于下限的部分裁掉
+    ymin = max(0.0, math.floor(min(r["composite"] for s in series for r in s["rows"] if "composite" in r) * 10) / 10 - 0.1)
+
+    css = (".bg{fill:#fcfcfb}.grid{stroke:#e1e0d9;stroke-width:1}.axis{stroke:#c3c2b7;stroke-width:1}"
+           ".ctx{stroke:#d3d2ca;stroke-width:1.25;fill:none}.acc{stroke:#2a78d6}.accf{fill:#2a78d6}"
+           ".band{fill:#2a78d6;fill-opacity:.16}.zone{fill:#2a78d6;fill-opacity:.06}"
+           ".thr{stroke:#898781;stroke-width:1;stroke-dasharray:3 3}.ring{stroke:#fcfcfb}"
+           ".t1{fill:#0b0b0b}.t2{fill:#52514e}.t3{fill:#898781}")
+    dark = (".bg{fill:#1a1a19}.grid{stroke:#2c2c2a}.axis{stroke:#383835}.ctx{stroke:#45453f}"
+            ".acc{stroke:#3987e5}.accf{fill:#3987e5}.band{fill:#3987e5;fill-opacity:.22}.zone{fill:#3987e5;fill-opacity:.09}"
+            ".ring{stroke:#1a1a19}.t1{fill:#f0efec}.t2{fill:#c3c2b7}")
+    o = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H:.0f}" width="{W}" height="{H:.0f}" '
          f'font-family="system-ui,-apple-system,\'Segoe UI\',\'PingFang SC\',\'Microsoft YaHei\',sans-serif">',
-         f"<style>{''.join(css)}@media (prefers-color-scheme:dark){{{''.join(dark)}}}</style>",
-         f'<rect class="bg" width="{W}" height="{H}" rx="8"/>',
-         f'<text class="t1" x="{L}" y="28" font-size="16" font-weight="600">综合分 vs 上下文长度</text>',
-         f'<text class="t2" x="{L}" y="47" font-size="12">越靠右越长；线越平越稳。虚线 = 可用门槛 {PASS_AVG:.2f}</text>']
-    # 图例
-    lx = L
-    for i, s in enumerate(series):
-        o.append(f'<line class="s{i}" x1="{lx}" y1="62" x2="{lx + 16}" y2="62" stroke-width="2"/>'
-                 f'<circle class="f{i} ring" cx="{lx + 8}" cy="62" r="4" stroke-width="2"/>'
-                 f'<text class="t2" x="{lx + 22}" y="66" font-size="12">{esc(s["name"])}</text>')
-        lx += 30 + 7 * len(s["name"].encode("gbk", "replace")) // 1
-    # 网格与坐标轴
-    for v in (0, 0.2, 0.4, 0.6, 0.8, 1.0):
-        o.append(f'<line class="{"axis" if v == 0 else "grid"}" x1="{L}" y1="{Y(v):.1f}" x2="{L + pw}" y2="{Y(v):.1f}"/>'
-                 f'<text class="t3" x="{L - 8}" y="{Y(v) + 4:.1f}" font-size="11" text-anchor="end">{v:.1f}</text>')
-    o.append(f'<line class="thr" x1="{L}" y1="{Y(PASS_AVG):.1f}" x2="{L + pw}" y2="{Y(PASS_AVG):.1f}"/>')
+         f"<style>{css}@media (prefers-color-scheme:dark){{{dark}}}</style>",
+         f'<rect class="bg" width="{W}" height="{H:.0f}" rx="8"/>',
+         f'<text class="t1" x="{M}" y="30" font-size="16" font-weight="600">各模型综合分 vs 上下文长度</text>']
+    # 图例（一行，图形 + 文字）
+    lx, ly = M, 60
+    def leg(svg, text, w):
+        nonlocal lx
+        o.append(svg(lx, ly) + f'<text class="t2" x="{lx + 22}" y="{ly + 4}" font-size="12">{text}</text>')
+        lx += 22 + w
+    leg(lambda x, y: f'<line class="acc" x1="{x}" y1="{y}" x2="{x + 16}" y2="{y}" stroke-width="2"/>'
+                     f'<circle class="accf ring" cx="{x + 8}" cy="{y}" r="3.5" stroke-width="1.5"/>', "各档平均分", 84)
+    leg(lambda x, y: f'<rect class="band" x="{x}" y="{y - 6}" width="16" height="12" rx="2"/>', "各次试验最低–最高", 128)
+    leg(lambda x, y: f'<line class="ctx" x1="{x}" y1="{y}" x2="{x + 16}" y2="{y}"/>', "其他模型", 64)
+    leg(lambda x, y: f'<rect class="zone" x="{x}" y="{y - 6}" width="16" height="12" rx="2"/>', "可用范围", 64)
+    leg(lambda x, y: f'<line class="thr" x1="{x}" y1="{y}" x2="{x + 16}" y2="{y}"/>', f"门槛 {PASS_AVG:.2f}", 60)
+    o.append(f'<text class="t3" x="{W - M}" y="{ly + 4}" font-size="11" text-anchor="end">'
+             f'横轴：上下文 token（对数刻度）；纵轴从 {ymin:.1f} 起</text>')
+
     shown, last = [], 1e9
-    for v in reversed(rungs):  # 从右往左放刻度标签，挤在一起的跳过
-        if last - X(v) >= 38:
+    for v in reversed(rungs):  # x 刻度标签从右往左放，挤的跳过
+        x = PL + inner * (math.log(v) - lo) / (hi - lo)
+        if last - x >= 34:
             shown.append(v)
-            last = X(v)
-    for v in rungs:
-        o.append(f'<line class="axis" x1="{X(v):.1f}" y1="{T + ph}" x2="{X(v):.1f}" y2="{T + ph + 4}"/>')
-        if v in shown:
-            o.append(f'<text class="t3" x="{X(v):.1f}" y="{T + ph + 18}" font-size="11" text-anchor="middle">{k(v)}</text>')
-    o.append(f'<text class="t3" x="{L + pw / 2}" y="{H - 12}" font-size="11" text-anchor="middle">上下文长度（token，对数刻度）</text>')
-    # 折线、点、末端标签
-    ends = []
-    for i, s in enumerate(series):
-        pts = [(X(r["rung"]), Y(r["composite"])) for r in s["rows"] if "composite" in r]
-        o.append(f'<polyline class="s{i}" fill="none" stroke-width="2" stroke-linejoin="round" '
+            last = x
+    for idx, s in enumerate(series):
+        c, rr = idx % cols, idx // cols
+        ox = M + c * (pw + GX)
+        oy = HEAD + rr * (TITLE + PH + XL + GY)
+        X = lambda v: ox + PL + inner * (math.log(v) - lo) / (hi - lo)
+        Y = lambda v: oy + TITLE + PH * (1 - (v - ymin) / (1 - ymin))
+        top, bot = Y(1), Y(ymin)
+        o.append(f'<clipPath id="cp{idx}"><rect x="{ox + PL}" y="{top - 5:.1f}" width="{inner:.1f}" height="{PH + 5}"/></clipPath>')
+        scored = [r for r in s["rows"] if "composite" in r]
+        mean = sum(r["composite"] for r in scored) / len(scored)
+        o.append(f'<text class="t1" x="{ox}" y="{oy + 14}" font-size="13" font-weight="600">{esc(s["name"])}</text>')
+        o.append(f'<text class="t2" x="{ox + pw}" y="{oy + 14}" font-size="11" text-anchor="end">'
+                 f'可用 {k(s["usable"]) if s["usable"] else "&lt; 最小档"} · 平均 {mean:.2f}</text>')
+        if s["usable"]:
+            o.append(f'<rect class="zone" x="{ox + PL:.1f}" y="{top:.1f}" width="{X(s["usable"]) - ox - PL + 6:.1f}" height="{PH}"/>')
+        for v in sorted({ymin, 0.5, 1.0} if ymin < 0.45 else {ymin, 1.0}):
+            o.append(f'<line class="{"axis" if v == ymin else "grid"}" x1="{ox + PL}" y1="{Y(v):.1f}" x2="{ox + PL + inner:.1f}" y2="{Y(v):.1f}"/>')
+            if c == 0:
+                o.append(f'<text class="t3" x="{ox + PL - 6}" y="{Y(v) + 4:.1f}" font-size="11" text-anchor="end">{v:.1f}</text>')
+        o.append(f'<line class="thr" x1="{ox + PL}" y1="{Y(PASS_AVG):.1f}" x2="{ox + PL + inner:.1f}" y2="{Y(PASS_AVG):.1f}"/>')
+        for v in rungs:
+            o.append(f'<line class="axis" x1="{X(v):.1f}" y1="{bot:.1f}" x2="{X(v):.1f}" y2="{bot + 3:.1f}"/>')
+            if idx + cols >= n and v in shown:  # 下方没有面板时才写 x 标签
+                o.append(f'<text class="t3" x="{X(v):.1f}" y="{bot + 16:.1f}" font-size="10.5" text-anchor="middle">{k(v)}</text>')
+        for other in series:  # 灰色对照线
+            if other is not s:
+                pts = [(X(r["rung"]), Y(r["composite"])) for r in other["rows"] if "composite" in r]
+                o.append(f'<polyline class="ctx" clip-path="url(#cp{idx})" points="{" ".join(f"{x:.1f},{y:.1f}" for x, y in pts)}"/>')
+        band = [(X(r["rung"]), Y(r["best"])) for r in scored] + [(X(r["rung"]), Y(r["worst"])) for r in reversed(scored)]
+        o.append(f'<polygon class="band" clip-path="url(#cp{idx})" points="{" ".join(f"{x:.1f},{y:.1f}" for x, y in band)}"/>')
+        pts = [(X(r["rung"]), Y(r["composite"])) for r in scored]
+        o.append(f'<polyline class="acc" fill="none" stroke-width="2" stroke-linejoin="round" '
                  f'points="{" ".join(f"{x:.1f},{y:.1f}" for x, y in pts)}"/>')
-        o += [f'<circle class="f{i} ring" cx="{x:.1f}" cy="{y:.1f}" r="4" stroke-width="2"/>' for x, y in pts]
-        last_row = [r for r in s["rows"] if "composite" in r][-1]
-        ends.append([pts[-1][1], i, f'{s["name"]} {last_row["composite"]:.2f}', pts[-1][0]])
-    ends.sort()
-    for a, b in zip(ends, ends[1:]):  # 末端标签纵向避让
-        b[0] = max(b[0], a[0] + 15)
-    for y, i, label, x in ends:
-        o.append(f'<text class="t2" x="{L + pw + 10}" y="{y + 4:.1f}" font-size="12">{esc(label)}</text>')
+        for r, (x, y) in zip(scored, pts):
+            o.append(f'<circle class="accf ring" cx="{x:.1f}" cy="{y:.1f}" r="3.5" stroke-width="1.5">'
+                     f'<title>{esc(s["name"])} {k(r["rung"])}：平均 {r["composite"]:.2f}（最低 {r["worst"]:.2f} / 最高 {r["best"]:.2f}，{r["n"]} 次）</title></circle>')
     o.append("</svg>")
     return "\n".join(o)
 
 # ---------------------------------------------------------------- 报告与 README
 
 def leaderboard_md(summary, cfg):
-    ranked = sorted(summary, key=lambda s: (s["usable"] or 0, s["perfect"] or 0,
-                                            sum(r.get("composite", 0) for r in s["rows"])), reverse=True)
+    ranked = rank(summary)
     rungs = sorted({r["rung"] for s in summary for r in s["rows"]}, reverse=True)
     md = ["| # | 模型 | 思考档 | 推荐上下文<br>（全部满分） | 可用上限<br>（均分≥0.90 且单次≥0.80） | 全档平均 | 每档次数 | 测试日期 |",
           "|---:|---|---|---:|---:|---:|---:|---|"]
