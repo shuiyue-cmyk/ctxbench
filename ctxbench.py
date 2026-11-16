@@ -246,16 +246,15 @@ def run_tokens(cli, model, variant, message):
     out = subprocess.run([cli, "run", "--format", "json", "--archived", "-m", target, message],
                          capture_output=True, text=True, encoding="utf-8", errors="replace",
                          cwd=os.environ.get("TEMP") or os.environ.get("TMPDIR") or "/tmp").stdout
-    tok = 0
     for ln in out.splitlines():
         try:
             ev = json.loads(ln)
         except json.JSONDecodeError:
             continue
-        if ev.get("type") == "step_finish":
+        if ev.get("type") == "step_finish":  # 只看第一步：后续步骤（工具调用等）会把前文再算一遍
             t = ev["part"]["tokens"]
-            tok = max(tok, t["input"] + t["cache"]["read"] + t["cache"]["write"])
-    return tok
+            return t["input"] + t["cache"]["read"] + t["cache"]["write"]
+    return 0
 
 
 def load_calib():
@@ -473,13 +472,15 @@ def leaderboard_md(summary, cfg):
     ranked = sorted(summary, key=lambda s: (s["usable"] or 0, s["perfect"] or 0,
                                             sum(r.get("composite", 0) for r in s["rows"])), reverse=True)
     rungs = sorted({r["rung"] for s in summary for r in s["rows"]}, reverse=True)
-    md = ["| # | 模型 | 思考档 | 推荐上下文<br>（全部满分） | 可用上限<br>（均分≥0.90 且单次≥0.80） | 每档次数 | 测试日期 |",
-          "|---:|---|---|---:|---:|---:|---|"]
+    md = ["| # | 模型 | 思考档 | 推荐上下文<br>（全部满分） | 可用上限<br>（均分≥0.90 且单次≥0.80） | 全档平均 | 每档次数 | 测试日期 |",
+          "|---:|---|---|---:|---:|---:|---:|---|"]
     fmt = lambda v: k(v) if v else "< 最小档"
     typical = {s["model"]: max((r["n"] for r in s["rows"]), default=0) for s in summary}
     for n, s in enumerate(ranked, 1):
+        scored = [r["composite"] for r in s["rows"] if "composite" in r]
+        mean = f"{sum(scored) / len(scored):.3f}" if scored else "-"
         md.append(f"| {n} | {s['name']}<br><sub>`{s['model']}`</sub> | {s['variant'] or '默认'} | "
-                  f"**{fmt(s['perfect'])}** | **{fmt(s['usable'])}** | {typical[s['model']]} | {s['date'] or '-'} |")
+                  f"**{fmt(s['perfect'])}** | **{fmt(s['usable'])}** | {mean} | {typical[s['model']]} | {s['date'] or '-'} |")
     md += ["", "各档综合分（每格为各次试验的平均；— 表示未测或请求失败）：", "",
            "| 模型 | " + " | ".join(k(r) for r in rungs) + " |", "|---|" + "---:|" * len(rungs)]
     md[-4] = "各档综合分（每格为各次试验的平均；— 表示未测或请求失败；<sup>×n</sup> 表示该格次数少于该模型的常规次数）："
@@ -551,6 +552,7 @@ if __name__ == "__main__":
     p.add_argument("--rungs", nargs="+", type=int, help="覆盖 config.json 的阶梯")
     p.add_argument("--trials", type=int, help="覆盖 config.json 的每档次数")
     p.add_argument("--concurrency", type=int, help="覆盖 config.json 的并发数（0 = 所有格子同时发出）")
+    p.add_argument("--timeout", type=int, help="覆盖 config.json 的单次请求超时（秒）")
     p.add_argument("--skip", nargs="+", default=[], metavar="MODEL@RUNG#TRIAL",
                    help="本次跳过的格子，例如 opencode-go/glm-5.3-flash@400000#1（别的进程正在跑它时用）")
     a = p.parse_args()
@@ -569,6 +571,6 @@ if __name__ == "__main__":
             skip.append((norm(mm), int(rung), int(trial)))
         conc = a.concurrency if a.concurrency is not None else cfg.get("concurrency", 8)
         run(models, sorted(a.rungs or cfg["rungs"], reverse=True), a.trials or cfg["trials"],
-            cfg.get("request_timeout_s", 3600), conc, skip)
+            a.timeout or cfg.get("request_timeout_s", 3600), conc, skip)
     else:
         report()
