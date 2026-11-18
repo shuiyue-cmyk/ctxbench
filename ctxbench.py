@@ -388,9 +388,9 @@ def summarize(cfg):
                 best = rung
             return best
         fallback = time.strftime("%Y-%m-%d", time.localtime(RAW.stat().st_mtime)) if RAW.exists() else None
-        dates = sorted(j.get("date") or fallback for (mm, *_), j in latest.items() if mm == m["model"])
+        dates = [j["date"] for (mm, *_), j in latest.items() if mm == m["model"] and j.get("date")]
         out.append({**m, "rows": rows, "perfect": largest(0.999, 0.999), "usable": largest(PASS_AVG, PASS_WORST),
-                    "date": dates[-1] if dates else None})
+                    "date": max(dates, default=fallback) if cells else None})
     return out
 
 

@@ -9,6 +9,7 @@
     { "model": "opencode-go/muse-spark-1.2-contributor", "variant": "xhigh", "name": "Muse Spark 1.2" },
     { "model": "opencode-go/minimax-m3.1-flash",         "variant": "max",   "name": "MiniMax M3.1 Flash" },
     { "model": "opencode-go/hy4-flash-free",             "variant": "high",  "name": "Hy4 Flash" },
-    { "model": "opencode-go/glm-5.3-flash",              "variant": "max",   "name": "GLM-5.3-Flash" }
+    { "model": "opencode-go/glm-5.3-flash",              "variant": "max",   "name": "GLM-5.3-Flash" },
+    { "model": "opencode-go/glm-5.3",                    "variant": "max",   "name": "GLM-5.3" }
   ]
 }

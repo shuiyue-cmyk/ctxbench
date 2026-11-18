@@ -20,10 +20,11 @@ OpenCode Go / Zen 订阅、Anthropic、OpenAI、OpenRouter、自建的 OpenAI �
 |---:|---|---|---:|---:|---:|---:|---|
 | 1 | Hy4 Flash<br><sub>`opencode-go/hy4-flash-free`</sub> | high | **32K** | **500K** | 0.958 | 5 | 2026-11-16 |
 | 2 | Muse Spark 1.3<br><sub>`opencode-go/muse-spark-1.3-contributor`</sub> | xhigh | **128K** | **128K** | 0.976 | 5 | 2026-11-16 |
-| 3 | MiniMax M3.1 Flash<br><sub>`opencode-go/minimax-m3.1-flash`</sub> | max | **128K** | **128K** | 0.796 | 3 | 2026-11-16 |
+| 3 | MiniMax M3.1 Flash<br><sub>`opencode-go/minimax-m3.1-flash`</sub> | max | **128K** | **128K** | 0.796 | 3 | 2026-11-11 |
 | 4 | DeepSeek V4.1 Flash<br><sub>`opencode-go/deepseek-v4.1-flash`</sub> | max | **64K** | **128K** | 0.920 | 5 | 2026-11-16 |
 | 5 | Muse Spark 1.2<br><sub>`opencode-go/muse-spark-1.2-contributor`</sub> | xhigh | **< 最小档** | **128K** | 0.845 | 5 | 2026-11-16 |
-| 6 | GLM-5.3-Flash<br><sub>`opencode-go/glm-5.3-flash`</sub> | max | **< 最小档** | **< 最小档** | 0.870 | 2 | 2026-11-16 |
+| 6 | GLM-5.3<br><sub>`opencode-go/glm-5.3`</sub> | max | **64K** | **64K** | 0.840 | 5 | 2026-11-18 |
+| 7 | GLM-5.3-Flash<br><sub>`opencode-go/glm-5.3-flash`</sub> | max | **< 最小档** | **< 最小档** | 0.870 | 2 | 2026-11-11 |
 
 各档综合分（每格为各次试验的平均；— 表示未测或请求失败；<sup>×n</sup> 表示该格次数少于该模型的常规次数）：
 
@@ -34,6 +35,7 @@ OpenCode Go / Zen 订阅、Anthropic、OpenAI、OpenRouter、自建的 OpenAI �
 | MiniMax M3.1 Flash | 0.47 | 0.47 | 0.66 | 0.73 | 0.83 | 0.93 | 0.87 | 1.00 | 1.00 | 1.00 |
 | DeepSeek V4.1 Flash | 0.88 | 0.88 | 0.92 | 0.88 | 0.92 | 0.88 | 0.88 | 0.96 | 1.00 | 1.00 |
 | Muse Spark 1.2 | 0.52 | 0.67 | 0.80 | 0.85 | 0.91 | 0.95 | 0.88 | 0.96 | 0.96 | 0.95 |
+| GLM-5.3 | 0.59 | 0.77 | 0.67 | 0.79 | 0.91 | 0.87 | 1.00 | 0.80 | 1.00 | 1.00 |
 | GLM-5.3-Flash | 0.72 | 0.84 | 0.47 | 1.00 | 1.00 | 0.90 | 1.00 | 1.00 | 0.90 | 0.88 |
 
 逐档明细（检索漏掉的深度、空回答、耗时等）见 [results/report.md](results/report.md)。
@@ -103,6 +105,8 @@ cd ctxbench
 python ctxbench.py run --models opencode-go/glm-5.3-flash --rungs 64000 32000 --trials 1
 ```
 
+用 `python ctxbench.py run --models opencode-go/glm-5.3 --trials 5 --concurrency 8` 将 GLM-5.3 的完整阶梯补测到每档 5 次。
+
 `report` 会生成 `results/report.md`（逐档明细）、`results/chart.svg`（每个模型一格的分面折线图，带各次试验的最低–最高色带），并刷新本 README 的榜单区块。
 
 ## 它怎么调用 opencode
@@ -116,7 +120,7 @@ python ctxbench.py run --models opencode-go/glm-5.3-flash --rungs 64000 32000 --
 ## 注意事项
 
 - 每档默认跑 3 次，单次结果仍有运气成分，看“可用上限”要结合逐档明细里的“最差一次”。从首轮结果看，失分大多来自计数题，检索和更新题错得少得多。
-- 当前榜单各模型的每档次数不同：DeepSeek V4.1 Flash、Muse Spark 1.3、Muse Spark 1.2、Hy4 Flash 为 5 次，MiniMax M3.1 Flash 为 3 次，GLM-5.3-Flash 为 2 次（见榜单“每档次数”列）。次数越多，“推荐上下文”越严格也越可信；GLM 的失分集中在短上下文的计数题，排名受偶然误差影响较大。
+- 当前榜单中，DeepSeek V4.1 Flash、Muse Spark 1.3、Muse Spark 1.2、Hy4 Flash 和 GLM-5.3 每档测了 5 次，MiniMax M3.1 Flash 每档 3 次，GLM-5.3-Flash 每档 2 次。次数越多，“推荐上下文”越严格也越可信。GLM-5.3-Flash 在短上下文的失分集中在计数题，排名受偶然误差影响较大。
 - 档位长度是按校准比例换算的，实际 token 数可能有百分之几的偏差。
 - 结果反映的是“经由该供应商、在测试当天”的表现。同一个模型换供应商、换思考档，结果都可能不同。
 - 题目是中文的工作记录；英文或代码为主的上下文，表现可能不一样。
